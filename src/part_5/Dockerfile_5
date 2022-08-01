@@ -1,0 +1,38 @@
+FROM nginx:latest
+
+WORKDIR /mini_server
+
+COPY /server/mini_server.c /mini_server/
+COPY /server/start_mini_server.sh /mini_server/
+COPY /server/nginx/nginx.conf /etc/nginx/nginx.conf
+
+RUN apt-get update; \
+    apt-get install -y gcc\
+    spawn-fcgi \
+    libfcgi-dev \
+    && rm -rf /var/lib/apt/lists \
+    && /etc/init.d/nginx start \
+    && chmod u-s /bin/su \
+    && chmod u-s /usr/bin/passwd \
+    && chmod u-s /usr/bin/chsh \
+    && chmod u-s /usr/bin/gpasswd \
+    && chmod u-s /usr/bin/chfn \
+    && chmod u-s /usr/bin/newgrp \
+    && chmod u-s /bin/mount \
+    && chmod u-s /bin/umount \
+    && chmod g-s /sbin/unix_chkpwd \
+    && chmod g-s /usr/bin/wall \
+    && chmod g-s /usr/bin/chage \
+    && chmod g-s /usr/bin/expiry \
+    && chown -R nginx:nginx /mini_server && chmod -R 777 /mini_server \
+    && chown -R nginx:nginx /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown -R nginx:nginx /var/run/nginx.pid
+
+
+USER nginx
+
+CMD ["sh", "./start_mini_server.sh"]
+
+HEALTHCHECK --interval=5m --timeout=3s \
+  CMD curl -f http://localhost:81/ || exit 1
